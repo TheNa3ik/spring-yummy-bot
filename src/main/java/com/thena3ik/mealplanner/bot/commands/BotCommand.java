@@ -8,7 +8,8 @@ import java.util.Arrays;
 public enum BotCommand {
     START("/start"),
     SEARCH("🍽 Search"),
-    DIET_PREFERENCES("\uD83C\uDF5C Diet preferences");
+    DIET_PREFERENCES("\uD83C\uDF5C Diet preferences"),
+    LANGUAGE("\uD83C\uDF10 Language");
 
     private final String value;
 

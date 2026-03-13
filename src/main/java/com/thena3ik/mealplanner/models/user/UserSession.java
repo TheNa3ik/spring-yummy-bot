@@ -17,6 +17,10 @@ public class UserSession {
     private String firstName;
 
     @Setter
+    @Column(name = "language_code")
+    private String languageCode;
+
+    @Setter
     @Enumerated(EnumType.STRING)
     private UserState userState;
 

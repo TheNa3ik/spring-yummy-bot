@@ -1,36 +1,19 @@
 package com.thena3ik.mealplanner.models;
 
-import java.util.Optional;
+import lombok.Getter;
 
+@Getter
 public enum Diet {
-    NONE("🥩 None", "none"),
-    VEGETARIAN("🥗 Vegetarian", "vegetarian"),
-    VEGAN("🌾 Vegan", "vegan"),
-    KETO("🧀 Keto", "keto");
+    NONE("diet.button.none", "none"),
+    VEGETARIAN("diet.button.vegetarian", "vegetarian"),
+    VEGAN("diet.button.vegan", "vegan"),
+    KETO("diet.button.keto", "keto");
 
-    private final String displayText;
+    private final String labelKey;
     private final String apiValue;
 
-    Diet(String displayText, String apiValue) {
-        this.displayText = displayText;
+    Diet(String labelKey, String apiValue) {
+        this.labelKey = labelKey;
         this.apiValue = apiValue;
-    }
-
-    public String getDisplayText() {
-        return displayText;
-    }
-
-    public String getApiValue() {
-        return apiValue;
-    }
-
-    public static Optional<Diet> fromDisplayText(String text) {
-        if (text == null) return Optional.empty();
-        for (Diet diet : values()) {
-            if (diet.getDisplayText().equals(text.trim())) {
-                return Optional.of(diet);
-            }
-        }
-        return Optional.empty();
     }
 }

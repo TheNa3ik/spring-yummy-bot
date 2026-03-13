@@ -1,16 +1,10 @@
 package com.thena3ik.mealplanner.bot.handlers;
 
 import com.thena3ik.mealplanner.bot.commands.BotCommand;
-import com.thena3ik.mealplanner.models.Diet;
-import com.thena3ik.mealplanner.models.LastSearch;
-import com.thena3ik.mealplanner.models.Recipe;
-import com.thena3ik.mealplanner.models.RecipeDetails;
+import com.thena3ik.mealplanner.models.*;
 import com.thena3ik.mealplanner.models.user.UserSession;
 import com.thena3ik.mealplanner.models.user.UserState;
-import com.thena3ik.mealplanner.service.MessageFormatter;
-import com.thena3ik.mealplanner.service.SpoonacularService;
-import com.thena3ik.mealplanner.service.TelegramService;
-import com.thena3ik.mealplanner.service.UserService;
+import com.thena3ik.mealplanner.service.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.meta.api.objects.Update;
@@ -24,14 +18,16 @@ public class UpdateHandler {
     private final SpoonacularService spoonacularService;
     private final UserService userService;
     private final MessageFormatter messageFormatter;
+    private final LocaleService localeService;
 
     @Autowired
     public UpdateHandler(TelegramService telegramService, SpoonacularService spoonacularService,
-                         UserService userService, MessageFormatter messageFormatter) {
+                         UserService userService, MessageFormatter messageFormatter, LocaleService localeService) {
         this.telegramService = telegramService;
         this.spoonacularService = spoonacularService;
         this.userService = userService;
         this.messageFormatter = messageFormatter;
+        this.localeService = localeService;
     }
 
     public void handle(Update update) {
@@ -45,11 +41,18 @@ public class UpdateHandler {
         long chatId = update.getMessage().getChatId();
         String text = update.getMessage().getText();
         UserSession session = userService.findOrCreateById(chatId);
-        UserState state = session.getUserState();
+
+        if (session.getLanguageCode() == null) {
+            String telegramLang = update.getMessage().getFrom().getLanguageCode();
+            session.setLanguageCode(telegramLang);
+            userService.save(session);
+        }
 
         session.setFirstName(update.getMessage().getFrom().getFirstName());
+        UserState state = session.getUserState();
 
-        BotCommand command = BotCommand.fromText(text);
+        BotCommand command = resolveCommand(text, session.getLanguageCode());
+
         if (command != null) {
             handleCommand(session, command);
             return;
@@ -57,54 +60,65 @@ public class UpdateHandler {
 
         switch (state) {
             case CHOOSE_DIET -> handleChooseDiet(session, text);
+            case CHOOSE_LANGUAGE -> handleChooseLanguage(session, text);
             case ENTER_INGREDIENTS -> handleEnterIngredients(session, text);
             default -> handleIdle(session);
         }
     }
 
+    private BotCommand resolveCommand(String text, String langCode) {
+        BotCommand command = BotCommand.fromText(text);
+        if (command != null) return command;
+
+        if (text.equals(localeService.getMessage("menu.button.search", langCode))) {
+            return BotCommand.SEARCH;
+        }
+        if (text.equals(localeService.getMessage("menu.button.diet", langCode))) {
+            return BotCommand.DIET_PREFERENCES;
+        }
+        if (text.equals(localeService.getMessage("menu.button.language", langCode))) {
+            return BotCommand.LANGUAGE;
+        }
+
+        return null;
+    }
+
     private void handleCommand(UserSession session, BotCommand command) {
         long chatId = session.getChatId();
+        String lang = session.getLanguageCode();
 
         switch (command) {
             case START -> handleStart(session);
-
             case SEARCH -> handleSearch(session);
-
             case DIET_PREFERENCES -> {
                 session.setUserState(UserState.CHOOSE_DIET);
                 userService.save(session);
-                telegramService.sendDietKeyboard(chatId,
-                        "🥗 **Choose your diet**\n\n(This helps me find the perfect recipes for you!)");
+                telegramService.sendDietKeyboard(chatId, localeService.getMessage("diet.choose", lang), lang);
             }
-
-            default -> telegramService.sendMainMenu(chatId, "🤔 **Oops!** I don't recognize that command.");
+            case LANGUAGE -> {
+                session.setUserState(UserState.CHOOSE_LANGUAGE);
+                userService.save(session);
+                telegramService.sendLanguageMenu(chatId, localeService.getMessage("language.choose", lang));
+            }
+            default -> telegramService.sendMainMenu(chatId, localeService.getMessage("error.command.unknown", lang), lang);
         }
     }
 
 
     private void handleStart(UserSession session) {
+        String lang = session.getLanguageCode();
         if (!session.hasDiet()) {
             session.setUserState(UserState.CHOOSE_DIET);
-            String text = String.format("""
-                👋 **Welcome, %s!**
-                
-                I'm your Meal Planner Bot 🤖
-                Before we start, please choose your diet so I can find the best meals for you. 👇
-                """,
-                    session.getFirstName());
-            telegramService.sendDietKeyboard(session.getChatId(), text);
+            telegramService.sendDietKeyboard(session.getChatId(),
+                    localeService.getMessage("welcome.new", lang, session.getFirstName()), lang);
         } else {
-            String text = String.format("""
-                            👋 **Welcome back, %s!**
-                            
-                            Let's find your next meal! 🍽️
-                            """,
-                    session.getFirstName());
-            telegramService.sendMainMenu(session.getChatId(), text);
+            telegramService.sendMainMenu(session.getChatId(),
+                    localeService.getMessage("welcome.back", lang, session.getFirstName()), lang);
         }
     }
 
     private void handleSearch (UserSession session) {
+        String lang = session.getLanguageCode();
         LastSearch search = session.getLastSearch();
 
         if (search == null) {
@@ -117,17 +131,19 @@ public class UpdateHandler {
 
         session.setUserState(UserState.ENTER_INGREDIENTS);
         userService.save(session);
-        telegramService.sendMessage(session.getChatId(),
-                "🛒 **What ingredients do you have?**\n\n(e.g., *chicken, broccoli, rice*)");
+        telegramService.sendMessage(session.getChatId(), localeService.getMessage("search.start", lang));
     }
 
     private void handleChooseDiet(UserSession session, String dietTextFromButton) {
-        if (!telegramService.isValidDietOption(dietTextFromButton)) {
-            telegramService.sendMessage(session.getChatId(), "⚠️ **Invalid option!**\n\nPlease tap one of the buttons below. 👇");
+        String lang = session.getLanguageCode();
+
+        Diet selectedDiet = resolveDiet(dietTextFromButton, lang);
+
+        if (selectedDiet == null) {
+            telegramService.sendMessage(session.getChatId(), localeService.getMessage("error.invalid", lang));
             return;
         }
 
-        Diet selectedDiet = Diet.fromDisplayText(dietTextFromButton).get();
 
         String dietApiValue = selectedDiet.getApiValue();
 
@@ -135,8 +151,42 @@ public class UpdateHandler {
         session.setUserState(UserState.IDLE);
         userService.save(session);
 
+        String displayDietName = localeService.getMessage(selectedDiet.getLabelKey(), lang);
         telegramService.sendMainMenu(session.getChatId(),
-                String.format("✅ **Got it!**\n\nYour diet is set to: **%s**", selectedDiet.getDisplayText()));
+                localeService.getMessage("diet.confirm", lang, displayDietName), lang);
+    }
+
+    private Diet resolveDiet(String text, String lang) {
+        for (Diet diet : Diet.values()) {
+            String translatedText = localeService.getMessage(diet.getLabelKey(), lang);
+            if (translatedText.equals(text)) {
+                return diet;
+            }
+        }
+        return null;
+    }
+
+    private void handleChooseLanguage(UserSession session, String text) {
+        Optional<Language> selectedLangOpt = Language.fromDisplayText(text);
+
+        String currentLang = session.getLanguageCode();
+
+        if (selectedLangOpt.isEmpty()) {
+            telegramService.sendMessage(session.getChatId(), localeService.getMessage("error.invalid", currentLang));
+            return;
+        }
+
+        Language selectedLang = selectedLangOpt.get();
+        session.setLanguageCode(selectedLang.getCode());
+        session.setUserState(UserState.IDLE);
+        userService.save(session);
+
+        String newLangCode = selectedLang.getCode();
+
+        String confirmationText = localeService.getMessage("language.changed", newLangCode);
+        String menuText = localeService.getMessage("menu.idle", newLangCode);
+
+        telegramService.sendMainMenu(session.getChatId(), confirmationText + "\n\n" + menuText, newLangCode);
     }
 
     private void handleEnterIngredients(UserSession session, String ingredients) {
@@ -158,6 +208,7 @@ public class UpdateHandler {
 
         UserSession session = userService.findOrCreateById(chatId);
         LastSearch lastSearch = session.getLastSearch();
+        String lang = session.getLanguageCode();
 
         telegramService.answerCallback(callback.getId(), "");
 
@@ -176,17 +227,18 @@ public class UpdateHandler {
                 default -> {
                     if (data.startsWith("details_")) {
                         int recipeId = Integer.parseInt(data.substring("details_".length()));
-                        showRecipeDetails(chatId, recipeId);
+                        showRecipeDetails(chatId, recipeId, lang);
                     }
                 }
             }
         } catch (Exception e) {
-            telegramService.answerCallback(callback.getId(), "⚠️ Whoops! Something went wrong.");
+            telegramService.answerCallback(callback.getId(), localeService.getMessage("error.generic", lang));
         }
     }
 
     private void updateRecipeMessage(UserSession session, int messageId) {
         LastSearch search = session.getLastSearch();
+        String lang = session.getLanguageCode();
 
         Optional<Recipe> recipeOpt = spoonacularService.searchSingleRecipe(
                 search.getIngredients(),
@@ -198,30 +250,32 @@ public class UpdateHandler {
             Recipe recipe = recipeOpt.get();
             String text = messageFormatter.formatRecipeCard(recipe);
             telegramService.editMessage(session.getChatId(), messageId, text,
-                    telegramService.recipeInlineButtons(recipe.getId()));
+                    telegramService.recipeInlineButtons(recipe.getId(), lang));
         } else {
             telegramService.editMessage(session.getChatId(), messageId,
-                    "😕 **That's all for now!**\n\nNo more recipes found for this search.", null);
+                    localeService.getMessage("search.end", lang), null);
         }
     }
 
-    private void showRecipeDetails(long chatId, int recipeId) {
+    private void showRecipeDetails(long chatId, int recipeId, String lang) {
         Optional<RecipeDetails> detailsOpt = spoonacularService.getRecipeDetails(recipeId);
+
 
         if (detailsOpt.isPresent()) {
             String text = messageFormatter.formatRecipeDetails(detailsOpt.get());
             telegramService.sendMessage(chatId, text);
         } else {
-            telegramService.sendMessage(chatId, "❌ **Sorry!**\n\nI couldn't find the details for that recipe.");
+            telegramService.sendMessage(chatId, localeService.getMessage("recipe.details.missing", lang));
         }
     }
 
     private void handleIdle(UserSession session) {
-        telegramService.sendMainMenu(session.getChatId(),
-                "Ready when you are! 🤖\n\nUse the **Search** button to find a new meal.");
+        String lang = session.getLanguageCode();
+        telegramService.sendMainMenu(session.getChatId(), localeService.getMessage("menu.idle", lang), lang);
     }
 
     private boolean sendRecipe(UserSession session) {
+        String lang = session.getLanguageCode();
         LastSearch search = session.getLastSearch();
 
         Optional<Recipe> recipeOpt = spoonacularService.searchSingleRecipe(
@@ -236,10 +290,10 @@ public class UpdateHandler {
             userService.save(session);
 
             String text = messageFormatter.formatRecipeCard(recipe);
-            telegramService.sendRecipeMessage(session.getChatId(), text, recipe.getId());
+            telegramService.sendRecipeMessage(session.getChatId(), text, recipe.getId(), lang);
             return true;
         } else {
-            telegramService.sendMainMenu(session.getChatId(), "😕 **No recipes found!**\n\nTry searching with different ingredients.");
+            telegramService.sendMainMenu(session.getChatId(), localeService.getMessage("search.no_results", lang), lang);
             return false;
         }
     }
