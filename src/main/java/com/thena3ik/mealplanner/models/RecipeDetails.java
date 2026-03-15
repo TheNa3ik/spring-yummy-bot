@@ -16,5 +16,4 @@ public class RecipeDetails {
     @SerializedName("extendedIngredients")
     private List<Ingredient> ingredients;
     private String image;
-
 }

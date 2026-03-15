@@ -7,6 +7,9 @@ bot.username=
 # Spoonacular API
 spoonacular.api.key=
 
+# Gemini API
+gemini.api.key=
+
 # Database Connection
 spring.datasource.url=
 spring.datasource.username=

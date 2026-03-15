@@ -1,7 +1,7 @@
 package com.thena3ik.mealplanner.service;
 
-import com.thena3ik.mealplanner.models.Recipe;
 import com.thena3ik.mealplanner.models.RecipeDetails;
+import com.thena3ik.mealplanner.models.entity.RecipeEntity;
 import com.google.gson.Gson;
 import okhttp3.HttpUrl;
 import okhttp3.OkHttpClient;
@@ -33,11 +33,11 @@ public class SpoonacularService {
     }
 
     private static class RecipeSearchResponse {
-        List<Recipe> results;
+        List<RecipeEntity> results;
         int offset;
     }
 
-    public Optional<Recipe> searchSingleRecipe(String ingredients, String diet, int offset) {
+    public Optional<RecipeEntity> searchSingleRecipe(String ingredients, String diet, int offset) {
         try {
             String normalized = normalizeIngredients(ingredients);
             String dietValue = (diet == null || diet.isBlank()) ? "none" : diet.trim().toLowerCase(Locale.ROOT);

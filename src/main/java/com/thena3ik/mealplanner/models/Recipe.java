@@ -11,5 +11,4 @@ public class Recipe {
     private int servings;
     @SerializedName("readyInMinutes")
     private int readyInMinutes;
-
 }
