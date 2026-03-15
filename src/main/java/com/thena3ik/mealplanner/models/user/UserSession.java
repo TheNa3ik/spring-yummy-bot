@@ -1,6 +1,5 @@
 package com.thena3ik.mealplanner.models.user;
 
-import com.thena3ik.mealplanner.models.LastSearch;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;

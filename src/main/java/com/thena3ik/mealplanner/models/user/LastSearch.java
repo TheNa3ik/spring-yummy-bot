@@ -1,4 +1,4 @@
-package com.thena3ik.mealplanner.models;
+package com.thena3ik.mealplanner.models.user;
 
 import jakarta.persistence.Embeddable;
 import lombok.Getter;

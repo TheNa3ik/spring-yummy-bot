@@ -1,6 +1,6 @@
 package com.thena3ik.mealplanner.bot.handlers.state;
 
-import com.thena3ik.mealplanner.models.Language;
+import com.thena3ik.mealplanner.models.enums.Language;
 import com.thena3ik.mealplanner.models.user.UserSession;
 import com.thena3ik.mealplanner.models.user.UserState;
 import com.thena3ik.mealplanner.service.LocaleService;

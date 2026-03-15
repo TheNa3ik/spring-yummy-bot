@@ -3,11 +3,13 @@ package com.thena3ik.mealplanner.service;
 import com.thena3ik.mealplanner.models.entity.RecipeEntity;
 import com.thena3ik.mealplanner.models.entity.RecipeTranslationEntity;
 import com.thena3ik.mealplanner.repository.RecipeTranslationDao;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 
+@Slf4j
 @Service
 public class TranslationService {
 
@@ -25,6 +27,8 @@ public class TranslationService {
         Optional<RecipeTranslationEntity> optTrans = translationDao.findFirstByRecipeIdAndLanguageCode(englishRecipe.getId(), langCode);
 
         if (optTrans.isPresent()) return optTrans.get();
+
+        log.info("No cached translation found. Translating CARD for Recipe [ID: {}] to language: '{}'", englishRecipe.getId(), langCode);
 
         String translatedTitle = geminiService.translateTextAsync(englishRecipe.getTitle(), langCode).join();
 
@@ -44,6 +48,8 @@ public class TranslationService {
 
         if (translation.isDetailsTranslated()) return translation;
 
+        log.info("Translating DETAILS (Summary & Ingredients) for Recipe [ID: {}] to language: '{}'", englishRecipe.getId(), langCode);
+
         String ingredientsBlock = englishRecipe.getIngredients() != null ? String.join("\n🔹 ", englishRecipe.getIngredients()) : "";
         if (!ingredientsBlock.isEmpty()) ingredientsBlock = "🔹 " + ingredientsBlock;
 
@@ -56,6 +62,7 @@ public class TranslationService {
             translation.setSummary(summaryFuture.get());
             translation.setTranslatedIngredients(ingredientsFuture.get());
         } catch (Exception e) {
+            log.error("Parallel translation threads failed for Recipe [ID: {}]", englishRecipe.getId(), e);
             translation.setSummary("Translation error.");
             translation.setTranslatedIngredients("Translation error.");
         }

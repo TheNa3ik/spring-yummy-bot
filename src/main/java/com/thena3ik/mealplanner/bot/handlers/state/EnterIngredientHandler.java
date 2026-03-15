@@ -1,6 +1,7 @@
 package com.thena3ik.mealplanner.bot.handlers.state;
 
-import com.thena3ik.mealplanner.models.LastSearch;
+import com.thena3ik.mealplanner.components.MessageFormatter;
+import com.thena3ik.mealplanner.models.user.LastSearch;
 import com.thena3ik.mealplanner.models.entity.RecipeEntity;
 import com.thena3ik.mealplanner.models.entity.RecipeTranslationEntity;
 import com.thena3ik.mealplanner.models.user.UserSession;

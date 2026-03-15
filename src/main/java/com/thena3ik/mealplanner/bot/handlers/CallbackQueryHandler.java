@@ -1,17 +1,20 @@
 package com.thena3ik.mealplanner.bot.handlers;
 
-import com.thena3ik.mealplanner.models.LastSearch;
-import com.thena3ik.mealplanner.models.RecipeDetails;
+import com.thena3ik.mealplanner.components.MessageFormatter;
+import com.thena3ik.mealplanner.models.user.LastSearch;
+import com.thena3ik.mealplanner.models.dto.RecipeDetails;
 import com.thena3ik.mealplanner.models.entity.RecipeEntity;
 import com.thena3ik.mealplanner.models.entity.RecipeTranslationEntity;
 import com.thena3ik.mealplanner.models.user.UserSession;
 import com.thena3ik.mealplanner.repository.RecipeDao;
 import com.thena3ik.mealplanner.service.*;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.meta.api.objects.CallbackQuery;
 
 import java.util.Optional;
 
+@Slf4j
 @Component
 public class CallbackQueryHandler {
 
@@ -70,6 +73,7 @@ public class CallbackQueryHandler {
                 }
             }
         } catch (Exception e) {
+            log.error("Failed to process callback query '{}' for user [ID: {}]", data, chatId, e);
             telegramService.answerCallback(callback.getId(), localeService.getMessage("error.generic", lang));
         }
     }
@@ -115,6 +119,7 @@ public class CallbackQueryHandler {
                 recipeDao.save(recipe);
                 entityOpt = Optional.of(recipe);
             } else {
+                log.warn("Spoonacular API failed to return details for Recipe [ID: {}]", recipeId);
                 telegramService.sendMessage(chatId, localeService.getMessage("recipe.details.missing", lang));
                 return;
             }

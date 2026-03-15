@@ -1,7 +1,7 @@
 package com.thena3ik.mealplanner.bot.handlers;
 
 import com.thena3ik.mealplanner.bot.commands.BotCommand;
-import com.thena3ik.mealplanner.models.LastSearch;
+import com.thena3ik.mealplanner.models.user.LastSearch;
 import com.thena3ik.mealplanner.models.user.UserSession;
 import com.thena3ik.mealplanner.models.user.UserState;
 import com.thena3ik.mealplanner.service.LocaleService;
@@ -47,7 +47,6 @@ public class CommandDispatcher {
         if (text.equals(localeService.getMessage("menu.button.language", langCode))) {
             return BotCommand.LANGUAGE;
         }
-
         return null;
     }
 

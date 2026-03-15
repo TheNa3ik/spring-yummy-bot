@@ -1,5 +1,6 @@
 package com.thena3ik.mealplanner.bot;
 
+import com.thena3ik.mealplanner.bot.handlers.ErrorHandler;
 import com.thena3ik.mealplanner.bot.handlers.UpdateHandler;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -16,13 +17,16 @@ import java.util.concurrent.Executors;
 public class MealPlannerBot implements SpringLongPollingBot, LongPollingSingleThreadUpdateConsumer {
 
     private final UpdateHandler updateHandler;
+    private final ErrorHandler errorHandler;
     private final String botToken;
-
     private final ExecutorService executor = Executors.newFixedThreadPool(10);
 
     @Autowired
-    public MealPlannerBot(UpdateHandler updateHandler, @Value("${bot.token}") String botToken) {
+    public MealPlannerBot(UpdateHandler updateHandler,
+                          ErrorHandler errorHandler,
+                          @Value("${bot.token}") String botToken) {
         this.updateHandler = updateHandler;
+        this.errorHandler = errorHandler;
         this.botToken = botToken;
     }
 
@@ -42,8 +46,7 @@ public class MealPlannerBot implements SpringLongPollingBot, LongPollingSingleTh
             try {
                 updateHandler.handle(update);
             } catch (Exception e) {
-                System.err.println("!!! Unhandled exception during update processing !!!");
-                e.printStackTrace();
+                errorHandler.handle(e, update);
             }
         });
     }

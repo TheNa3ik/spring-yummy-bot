@@ -1,10 +1,9 @@
 package com.thena3ik.mealplanner.bot.handlers;
 
 import com.thena3ik.mealplanner.bot.handlers.state.StateHandler;
-import com.thena3ik.mealplanner.models.*;
 import com.thena3ik.mealplanner.models.user.UserSession;
 import com.thena3ik.mealplanner.models.user.UserState;
-import com.thena3ik.mealplanner.service.*;
+import com.thena3ik.mealplanner.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.meta.api.objects.Update;
@@ -54,7 +53,6 @@ public class UpdateHandler {
         }
 
         session.setFirstName(update.getMessage().getFrom().getFirstName());
-        UserState state = session.getUserState();
 
         if (commandDispatcher.processIfCommand(session, text)) {
             return;

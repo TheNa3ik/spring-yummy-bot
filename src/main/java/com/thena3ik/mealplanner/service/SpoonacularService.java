@@ -1,8 +1,9 @@
 package com.thena3ik.mealplanner.service;
 
-import com.thena3ik.mealplanner.models.RecipeDetails;
+import com.thena3ik.mealplanner.models.dto.RecipeDetails;
 import com.thena3ik.mealplanner.models.entity.RecipeEntity;
 import com.google.gson.Gson;
+import lombok.extern.slf4j.Slf4j;
 import okhttp3.HttpUrl;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
@@ -14,8 +15,10 @@ import org.springframework.stereotype.Service;
 import java.io.IOException;
 import java.util.List;
 import java.util.Locale;
+import java.util.Objects;
 import java.util.Optional;
 
+@Slf4j
 @Service
 public class SpoonacularService {
 
@@ -32,6 +35,7 @@ public class SpoonacularService {
         this.gson = new Gson();
     }
 
+    @SuppressWarnings("unused")
     private static class RecipeSearchResponse {
         List<RecipeEntity> results;
         int offset;
@@ -42,7 +46,7 @@ public class SpoonacularService {
             String normalized = normalizeIngredients(ingredients);
             String dietValue = (diet == null || diet.isBlank()) ? "none" : diet.trim().toLowerCase(Locale.ROOT);
 
-            HttpUrl url = HttpUrl.parse(SEARCH_URL).newBuilder()
+            HttpUrl url = Objects.requireNonNull(HttpUrl.parse(SEARCH_URL)).newBuilder()
                     .addQueryParameter("includeIngredients", normalized)
                     .addQueryParameter("diet", dietValue)
                     .addQueryParameter("number", "1")
@@ -54,10 +58,16 @@ public class SpoonacularService {
             Request request = new Request.Builder().url(url).get().build();
 
             try (Response response = client.newCall(request).execute()) {
-                if (!response.isSuccessful()) return Optional.empty();
+                if (!response.isSuccessful()) {
+                    log.warn("Spoonacular search API failed with HTTP {}: {}", response.code(), response.message());
+                    return Optional.empty();
+                }
 
                 String body = response.body() == null ? "" : response.body().string();
-                if (body.isBlank()) return Optional.empty();
+                if (body.isBlank()) {
+                    log.warn("Spoonacular search API returned an empty body.");
+                    return Optional.empty();
+                }
 
                 RecipeSearchResponse searchResponse = gson.fromJson(body, RecipeSearchResponse.class);
 
@@ -69,37 +79,40 @@ public class SpoonacularService {
             }
 
         } catch (Exception e) {
-            System.err.println("Spoonacular error: " + e.getMessage());
+            log.error("Critical network or parsing error during Spoonacular search", e);
             return Optional.empty();
         }
     }
 
     public Optional<RecipeDetails> getRecipeDetails(int recipeId) {
         try {
-            String url = String.format(DETAILS_URL, recipeId);
-
-            HttpUrl httpUrl = HttpUrl.parse(String.format(DETAILS_URL, recipeId)).newBuilder()
+            HttpUrl httpUrl = Objects.requireNonNull(HttpUrl.parse(String.format(DETAILS_URL, recipeId))).newBuilder()
                     .addQueryParameter("apiKey", apiKey)
                     .build();
 
             Request request = new Request.Builder().url(httpUrl).get().build();
 
             try (Response response = client.newCall(request).execute()) {
-                if (!response.isSuccessful()) return Optional.empty();
+                if (!response.isSuccessful()) {
+                    log.warn("Spoonacular details API failed for recipe [{}] with HTTP {}: {}", recipeId, response.code(), response.message());
+                    return Optional.empty();
+                }
 
                 String body = response.body() != null ? response.body().string() : "";
-                if (body.isBlank()) return Optional.empty();
+                if (body.isBlank()) {
+                    log.warn("Spoonacular details API returned an empty body for recipe [{}].", recipeId);
+                    return Optional.empty();
+                }
 
                 RecipeDetails details = gson.fromJson(body, RecipeDetails.class);
                 return Optional.ofNullable(details);
             }
 
         } catch (IOException e) {
-            System.err.println("Recipe details error: " + e.getMessage());
+            log.error("Critical network or parsing error while fetching details for recipe [{}]", recipeId, e);
             return Optional.empty();
         }
     }
-
 
     private String normalizeIngredients(String ingredients) {
         if (ingredients == null || ingredients.isBlank()) return "";

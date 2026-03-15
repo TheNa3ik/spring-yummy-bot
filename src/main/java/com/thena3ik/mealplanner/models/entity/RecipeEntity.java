@@ -1,6 +1,6 @@
 package com.thena3ik.mealplanner.models.entity;
 
-import com.thena3ik.mealplanner.models.RecipeDetails;
+import com.thena3ik.mealplanner.models.dto.RecipeDetails;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -13,6 +13,7 @@ import java.util.List;
 @Getter
 @Setter
 @NoArgsConstructor
+@SuppressWarnings("unused")
 public class RecipeEntity {
 
     @Id

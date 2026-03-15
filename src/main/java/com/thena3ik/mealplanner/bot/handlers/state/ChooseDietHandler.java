@@ -1,7 +1,7 @@
 package com.thena3ik.mealplanner.bot.handlers.state;
 
-import com.thena3ik.mealplanner.models.Diet;
-import com.thena3ik.mealplanner.models.LastSearch;
+import com.thena3ik.mealplanner.models.enums.Diet;
+import com.thena3ik.mealplanner.models.user.LastSearch;
 import com.thena3ik.mealplanner.models.user.UserSession;
 import com.thena3ik.mealplanner.models.user.UserState;
 import com.thena3ik.mealplanner.service.LocaleService;

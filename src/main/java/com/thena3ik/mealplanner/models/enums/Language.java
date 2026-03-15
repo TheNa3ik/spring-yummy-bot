@@ -1,4 +1,4 @@
-package com.thena3ik.mealplanner.models;
+package com.thena3ik.mealplanner.models.enums;
 
 import lombok.Getter;
 

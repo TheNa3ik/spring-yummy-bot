@@ -1,7 +1,8 @@
-package com.thena3ik.mealplanner.service;
+package com.thena3ik.mealplanner.components;
 
 import com.thena3ik.mealplanner.models.entity.RecipeEntity;
 import com.thena3ik.mealplanner.models.entity.RecipeTranslationEntity;
+import com.thena3ik.mealplanner.service.LocaleService;
 import org.springframework.stereotype.Component;
 
 @Component

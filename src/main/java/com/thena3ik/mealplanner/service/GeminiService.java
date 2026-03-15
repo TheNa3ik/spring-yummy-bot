@@ -2,12 +2,14 @@ package com.thena3ik.mealplanner.service;
 
 import com.google.genai.Client;
 import com.google.genai.types.GenerateContentResponse;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
 import java.util.concurrent.CompletableFuture;
 
+@Slf4j
 @Service
 public class GeminiService {
 
@@ -21,13 +23,26 @@ public class GeminiService {
 
     @Async
     public CompletableFuture<String> translateTextAsync(String text, String targetLang) {
-        String prompt = "Translate this text to " + targetLang + " without any comments or markdown: " + text;
+        if (text == null || text.isBlank()) {
+            log.warn("Attempted to translate empty or null text to '{}'. Skipping API call.", targetLang);
+            return CompletableFuture.completedFuture("");
+        }
 
-        GenerateContentResponse response = geminiClient.models.generateContent(
-                "gemini-3.1-flash-lite-preview",
-                prompt,
-                null);
+        try {
+            String prompt = "Translate this text to " + targetLang + " without any comments or markdown: " + text;
 
-        return CompletableFuture.completedFuture(response.text());
+            GenerateContentResponse response = geminiClient.models.generateContent(
+                    "gemini-3.1-flash-lite-preview",
+                    prompt,
+                    null);
+
+            return CompletableFuture.completedFuture(response.text());
+
+        } catch (Exception e) {
+            log.error("Gemini translation API failed for text snippet. Target lang: '{}'", targetLang, e);
+
+            // Return untranslated text
+            return CompletableFuture.completedFuture(text);
+        }
     }
 }
