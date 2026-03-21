@@ -1,3 +1,8 @@
 package com.thena3ik.mealplanner.model.dto;
 
-public record Measures(Metric metric) {}
+import com.google.gson.annotations.SerializedName;
+
+public record Measures(
+        UnitInfo metric,
+        @SerializedName("us") UnitInfo imperial)
+{}

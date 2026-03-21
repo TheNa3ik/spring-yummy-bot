@@ -35,7 +35,6 @@ public class SpoonacularService {
         this.gson = new Gson();
     }
 
-    @SuppressWarnings("unused")
     private static class RecipeSearchResponse {
         List<RecipeEntity> results;
         int offset;

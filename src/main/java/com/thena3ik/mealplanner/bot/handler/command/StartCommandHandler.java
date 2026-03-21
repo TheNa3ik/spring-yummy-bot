@@ -34,8 +34,9 @@ public class StartCommandHandler implements BotCommandHandler {
             session.getSearchState().setUserState(UserState.DIET_MENU);
             userService.save(session);
 
+            telegramService.sendMessage(session.getChatId(), localeService.getMessage("start.welcome.text", lang, session.getFirstName()));
             telegramService.sendDietKeyboard(session,
-                    localeService.getMessage("start.welcome.new", lang, session.getFirstName()));
+                    localeService.getMessage("start.welcome.new", lang));
         } else {
             session.getSearchState().setUserState(UserState.MAIN_MENU);
             userService.save(session);

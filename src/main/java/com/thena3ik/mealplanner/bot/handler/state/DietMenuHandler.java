@@ -31,6 +31,7 @@ public class DietMenuHandler implements StateHandler {
     public void handle(UserEntity session, String text) {
         String lang = session.getLanguageCode();
         long chatId = session.getChatId();
+        boolean isNewUser = session.getDiet() == null;
 
         if (text.equals(localeService.getMessage("btn.new", lang))) {
             session.getSearchState().setUserState(UserState.MAIN_MENU);
@@ -61,11 +62,17 @@ public class DietMenuHandler implements StateHandler {
         searchState.resetOffset();
         searchState.setRecipeId(0);
 
-        session.getSearchState().setUserState(UserState.SETTINGS_MENU);
-        userService.save(session);
-
         String displayDietName = localeService.getMessage(selectedDiet.getLabelText(), lang);
-        telegramService.sendSettingsMenu(session, localeService.getMessage("menu.diet.confirm", lang, displayDietName));
+
+        if (isNewUser) {
+            session.getSearchState().setUserState(UserState.MAIN_MENU);
+            userService.save(session);
+            telegramService.sendMainMenu(session, localeService.getMessage("menu.diet.confirm", lang, displayDietName));
+        } else {
+            session.getSearchState().setUserState(UserState.SETTINGS_MENU);
+            userService.save(session);
+            telegramService.sendSettingsMenu(session, localeService.getMessage("menu.diet.confirm", lang, displayDietName));
+        }
     }
 
     private Diet resolveDiet(String text, String lang) {
