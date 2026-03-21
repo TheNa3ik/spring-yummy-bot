@@ -41,7 +41,6 @@ public class GeminiService {
         } catch (Exception e) {
             log.error("Gemini translation API failed for text snippet. Target lang: '{}'", targetLang, e);
 
-            // Return untranslated text
             return CompletableFuture.completedFuture(text);
         }
     }

@@ -1,8 +1,8 @@
 package com.thena3ik.mealplanner.service;
 
-import com.thena3ik.mealplanner.models.entity.RecipeEntity;
-import com.thena3ik.mealplanner.models.entity.RecipeTranslationEntity;
-import com.thena3ik.mealplanner.repository.RecipeTranslationDao;
+import com.thena3ik.mealplanner.model.entity.RecipeEntity;
+import com.thena3ik.mealplanner.model.entity.RecipeTranslationEntity;
+import com.thena3ik.mealplanner.repository.RecipeTranslationRepository;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
@@ -14,9 +14,9 @@ import java.util.concurrent.CompletableFuture;
 public class TranslationService {
 
     private final GeminiService geminiService;
-    private final RecipeTranslationDao translationDao;
+    private final RecipeTranslationRepository translationDao;
 
-    public TranslationService(GeminiService geminiService, RecipeTranslationDao translationDao) {
+    public TranslationService(GeminiService geminiService, RecipeTranslationRepository translationDao) {
         this.geminiService = geminiService;
         this.translationDao = translationDao;
     }
@@ -33,7 +33,7 @@ public class TranslationService {
         String translatedTitle = geminiService.translateTextAsync(englishRecipe.getTitle(), langCode).join();
 
         RecipeTranslationEntity translation = new RecipeTranslationEntity();
-        translation.setRecipeId(englishRecipe.getId());
+        translation.setRecipe(englishRecipe);
         translation.setLanguageCode(langCode);
         translation.setTitle(translatedTitle);
         translation.setDetailsTranslated(false);
@@ -50,24 +50,23 @@ public class TranslationService {
 
         log.info("Translating DETAILS (Summary & Ingredients) for Recipe [ID: {}] to language: '{}'", englishRecipe.getId(), langCode);
 
-        String ingredientsBlock = englishRecipe.getIngredients() != null ? String.join("\n🔹 ", englishRecipe.getIngredients()) : "";
-        if (!ingredientsBlock.isEmpty()) ingredientsBlock = "🔹 " + ingredientsBlock;
+        String rawIngredients = englishRecipe.getIngredientsList() != null ? englishRecipe.getIngredientsList() : "";
 
         CompletableFuture<String> summaryFuture = geminiService.translateTextAsync(englishRecipe.getSummary(), langCode);
-        CompletableFuture<String> ingredientsFuture = geminiService.translateTextAsync(ingredientsBlock, langCode);
-
-        CompletableFuture.allOf(summaryFuture, ingredientsFuture).join();
+        CompletableFuture<String> ingredientsFuture = geminiService.translateTextAsync(rawIngredients, langCode);
 
         try {
+            CompletableFuture.allOf(summaryFuture, ingredientsFuture).join();
+
             translation.setSummary(summaryFuture.get());
             translation.setTranslatedIngredients(ingredientsFuture.get());
-        } catch (Exception e) {
-            log.error("Parallel translation threads failed for Recipe [ID: {}]", englishRecipe.getId(), e);
-            translation.setSummary("Translation error.");
-            translation.setTranslatedIngredients("Translation error.");
-        }
 
-        translation.setDetailsTranslated(true);
-        return translationDao.save(translation);
+            translation.setDetailsTranslated(true);
+            return translationDao.save(translation);
+
+        } catch (Exception e) {
+            log.error("Parallel translation failed for Recipe [ID: {}]. Falling back to English.", englishRecipe.getId(), e);
+            return translation;
+        }
     }
 }

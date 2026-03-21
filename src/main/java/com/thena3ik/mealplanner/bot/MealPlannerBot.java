@@ -1,7 +1,7 @@
 package com.thena3ik.mealplanner.bot;
 
-import com.thena3ik.mealplanner.bot.handlers.ErrorHandler;
-import com.thena3ik.mealplanner.bot.handlers.UpdateHandler;
+import com.thena3ik.mealplanner.bot.handler.core.GlobalExceptionHandler;
+import com.thena3ik.mealplanner.bot.handler.core.UpdateDispatcher;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
@@ -16,17 +16,17 @@ import java.util.concurrent.Executors;
 @Component
 public class MealPlannerBot implements SpringLongPollingBot, LongPollingSingleThreadUpdateConsumer {
 
-    private final UpdateHandler updateHandler;
-    private final ErrorHandler errorHandler;
+    private final UpdateDispatcher updateDispatcher;
+    private final GlobalExceptionHandler globalExceptionHandler;
     private final String botToken;
     private final ExecutorService executor = Executors.newFixedThreadPool(10);
 
     @Autowired
-    public MealPlannerBot(UpdateHandler updateHandler,
-                          ErrorHandler errorHandler,
+    public MealPlannerBot(UpdateDispatcher updateDispatcher,
+                          GlobalExceptionHandler globalExceptionHandler,
                           @Value("${bot.token}") String botToken) {
-        this.updateHandler = updateHandler;
-        this.errorHandler = errorHandler;
+        this.updateDispatcher = updateDispatcher;
+        this.globalExceptionHandler = globalExceptionHandler;
         this.botToken = botToken;
     }
 
@@ -44,9 +44,9 @@ public class MealPlannerBot implements SpringLongPollingBot, LongPollingSingleTh
     public void consume(Update update) {
         executor.submit(() -> {
             try {
-                updateHandler.handle(update);
+                updateDispatcher.handle(update);
             } catch (Exception e) {
-                errorHandler.handle(e, update);
+                globalExceptionHandler.handle(e, update);
             }
         });
     }

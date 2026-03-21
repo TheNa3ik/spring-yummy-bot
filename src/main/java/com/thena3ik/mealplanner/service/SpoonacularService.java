@@ -1,7 +1,7 @@
 package com.thena3ik.mealplanner.service;
 
-import com.thena3ik.mealplanner.models.dto.RecipeDetails;
-import com.thena3ik.mealplanner.models.entity.RecipeEntity;
+import com.thena3ik.mealplanner.model.dto.RecipeDetails;
+import com.thena3ik.mealplanner.model.entity.RecipeEntity;
 import com.google.gson.Gson;
 import lombok.extern.slf4j.Slf4j;
 import okhttp3.HttpUrl;

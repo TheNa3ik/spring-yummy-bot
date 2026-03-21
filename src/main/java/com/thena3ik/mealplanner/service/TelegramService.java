@@ -1,6 +1,7 @@
 package com.thena3ik.mealplanner.service;
 
-import com.thena3ik.mealplanner.components.KeyboardFactory;
+import com.thena3ik.mealplanner.model.entity.UserEntity;
+import com.thena3ik.mealplanner.ui.KeyboardFactory;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -71,23 +72,38 @@ public class TelegramService {
         }
     }
 
-    public void sendMainMenu(Long chatId, String text, String lang) {
-        sendMessage(chatId, text, keyboardFactory.getMainMenuKeyboard(lang));
+    public void sendMainMenu(UserEntity session, String text) {
+        sendMessage(session.getChatId(), text,
+                keyboardFactory.getMainMenuKeyboard(session.getLanguageCode()));
     }
 
-    public void sendDietKeyboard(Long chatId, String text, String lang) {
-        sendMessage(chatId, text, keyboardFactory.getDietKeyboard(lang));
+    public void sendSettingsMenu(UserEntity session, String text) {
+        sendMessage(session.getChatId(), text,
+                keyboardFactory.getSettingsKeyboard(session.getLanguageCode(), session.isAiTranslationEnabled()));
     }
 
-    public void sendLanguageMenu(Long chatId, String text) {
-        sendMessage(chatId, text, keyboardFactory.getLanguageKeyboard());
+    public void sendDietKeyboard(UserEntity session, String text) {
+        boolean isNewUser = session.getDiet() == null;
+        sendMessage(session.getChatId(), text,
+                keyboardFactory.getDietKeyboard(session.getLanguageCode(), isNewUser));
     }
 
-    public void sendRecipeMessage (Long chatId, String text, int recipeId, String lang) {
-        sendMessage(chatId, text, keyboardFactory.getRecipeInlineButtons(recipeId, lang));
+    public void sendLanguageMenu(UserEntity session, String text) {
+        sendMessage(session.getChatId(), text,
+                keyboardFactory.getLanguageKeyboard(session.getLanguageCode()));
     }
 
-    public InlineKeyboardMarkup recipeInlineButtons(int recipeId, String lang) {
-        return keyboardFactory.getRecipeInlineButtons(recipeId, lang);
+    public void sendRecipeMessage(UserEntity session, String text, int recipeId) {
+        sendMessage(session.getChatId(), text,
+                keyboardFactory.getRecipeInlineButtons(recipeId, session.getLanguageCode()));
+    }
+
+    public void sendAboutMeMessage(UserEntity session, String text) {
+        sendMessage(session.getChatId(), text,
+                keyboardFactory.getAboutMeInlineButtons());
+    }
+
+    public InlineKeyboardMarkup recipeInlineButtons(UserEntity session, int recipeId) {
+        return keyboardFactory.getRecipeInlineButtons(recipeId, session.getLanguageCode());
     }
 }
