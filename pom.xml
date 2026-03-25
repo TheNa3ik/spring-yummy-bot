@@ -5,14 +5,14 @@
 	<parent>
 		<groupId>org.springframework.boot</groupId>
 		<artifactId>spring-boot-starter-parent</artifactId>
-		<version>4.0.0</version>
+		<version>4.0.4</version>
 		<relativePath/>
 	</parent>
-	<groupId>com.thena3ik.mealplanner</groupId>
-	<artifactId>mealplanner-bot</artifactId>
+	<groupId>com.thena3ik.yummybot</groupId>
+	<artifactId>spring-yummy-bot</artifactId>
 	<version>0.0.1-SNAPSHOT</version>
-	<name>mealplanner-bot</name>
-	<description>Demo project for Spring Boot</description>
+	<name>spring-yummy-bot</name>
+	<description>A Telegram bot built with Spring Boot that helps users find recipes, filter by dietary needs, and translate cooking instructions using AI</description>
 	<url/>
 	<licenses>
 		<license/>
