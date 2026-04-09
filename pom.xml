@@ -10,7 +10,7 @@
 	</parent>
 	<groupId>com.thena3ik.yummybot</groupId>
 	<artifactId>spring-yummy-bot</artifactId>
-	<version>0.0.1-SNAPSHOT</version>
+	<version>1.0.0-RELEASE</version>
 	<name>spring-yummy-bot</name>
 	<description>A Telegram bot built with Spring Boot that helps users find recipes, filter by dietary needs, and translate cooking instructions using AI</description>
 	<url/>
@@ -75,12 +75,6 @@
 			<groupId>org.telegram</groupId>
 			<artifactId>telegrambots-client</artifactId>
 			<version>9.2.0</version>
-		</dependency>
-
-		<dependency>
-			<groupId>com.google.code.gson</groupId>
-			<artifactId>gson</artifactId>
-			<version>2.13.2</version>
 		</dependency>
 		<dependency>
 			<groupId>org.testng</groupId>
